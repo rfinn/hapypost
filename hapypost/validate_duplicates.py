@@ -43,7 +43,7 @@ from hapy.utils.plotting import raincloud_by_group
 from hapy.utils.results_table import safe_bool_array, safe_float_array, safe_str_array, first_existing_col, first_populated_col
 from hapy.utils.results_table import build_row_qc_flags, ensure_dir, median_and_mad, get_std
 from hapy.utils.results_table import prepare_analysis_table
-from validate_measurements import _robust_limits
+from hapy.utils.plotting import plot_difference_hist, _robust_limits, plot_with_residuals
 # ----------------------------------------------------------------------
 # helpers
 # ----------------------------------------------------------------------
@@ -640,7 +640,8 @@ def main():
         choices=["virgo", "agc"],
         required=True,
         help="Pipeline stage whose results should be merged."
-    )    
+    )
+    parser.add_argument("--apply-filter-cut", default=False, action="store_true", help="apply filter transmission cut")    
     parser.add_argument(
         "--max-ha-filter-correction",
         type=float,
@@ -661,7 +662,9 @@ def main():
     # and MASK_WARN, BRIGHT_STAR, and a few others
     # NOTE: filter warning is not included
     tab = tab[tab["CLEAN"]]
-
+    if args.apply_filter_cut:
+        fflag = tab['FILTER_CORRECTION'] < args.max_ha_filter_correction
+        tab = tab[fflag]
     print(f"length of table after applying CLEAN flag = {len(tab)}")
     #if "VFID" not in tab.colnames:
     #    raise RuntimeError("Merged results table must contain VFID for duplicate analysis.")
@@ -678,6 +681,9 @@ def main():
 
     flags = build_row_flags(tab, max_ha_filter_correction=args.max_ha_filter_correction)
 
+    return tab, pairtab, flags
+
+def setup_plots():
     # resolve FWHM columns, including typo fallback
     r_fwhm_col = first_populated_col(tab, ["R_FWHM_PSF", "R_FWHM", "R_FHWM"])
     h_fwhm_col = first_populated_col(tab, ["H_FWHM_PSF", "H_FWHM", "H_FHWM"])
@@ -685,7 +691,7 @@ def main():
     review_priority = tab["REVIEW_PRIORITY"]
 
     rmag24 = tab["R24_MAG"]
-    hmag
+    #hmag
     if r_fwhm_col is not None:
         print(f"Using {r_fwhm_col} for R-band FWHM coloring")
     if h_fwhm_col is not None:
@@ -766,4 +772,4 @@ def main():
  
 
 if __name__ == "__main__":
-    main()
+    tab, pairtab, flags = main()
