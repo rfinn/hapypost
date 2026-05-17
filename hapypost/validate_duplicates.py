@@ -630,6 +630,54 @@ def plot_rainclouds(unique_pairs, pair_names, residual):
 # ----------------------------------------------------------------------
 # main
 # ----------------------------------------------------------------------
+def run_validate_duplicates(
+    table,
+    outdir="validate_duplicates",
+    scheme="virgo",
+    apply_filter_cut=False,
+    max_ha_filter_correction=1.2,
+):
+    outdir = Path(outdir)
+    ensure_dir(outdir)
+
+    tab = Table.read(table)
+    print(f"Read {len(tab)} rows from {table}")
+
+    tab = prepare_analysis_table(tab)
+
+    # remove galaxies with CATALOG_USE == CAUTION or TBD
+    # and MASK_WARN, BRIGHT_STAR, and a few others
+    # NOTE: filter warning is not included
+    tab = tab[tab["CLEAN"]]
+
+    if apply_filter_cut:
+        fflag = tab["FILTER_CORRECTION"] < max_ha_filter_correction
+        tab = tab[fflag]
+
+    print(f"length of table after applying CLEAN flag = {len(tab)}")
+
+    colid = "OBJID" if scheme == "agc" else "VFID"
+
+    multiplicity = count_observation_multiplicity(tab, id_col=colid)
+
+    pairtab = build_duplicate_pairs(tab, id_col=colid)
+    print(f"Found {len(pairtab)} duplicate pairs")
+
+    write_duplicate_pairs(outdir, pairtab)
+
+    flags = build_row_flags(
+        tab,
+        max_ha_filter_correction=max_ha_filter_correction,
+    )
+
+    return {
+        "tab": tab,
+        "pairs": pairtab,
+        "flags": flags,
+        "multiplicity": multiplicity,
+        "outdir": outdir,
+    }
+
 
 def main():
     parser = argparse.ArgumentParser(description="QC analysis for duplicate HAPY observations.")
@@ -639,49 +687,32 @@ def main():
         "--scheme",
         choices=["virgo", "agc"],
         required=True,
-        help="Pipeline stage whose results should be merged."
+        help="Pipeline scheme.",
     )
-    parser.add_argument("--apply-filter-cut", default=False, action="store_true", help="apply filter transmission cut")    
+    parser.add_argument(
+        "--apply-filter-cut",
+        default=False,
+        action="store_true",
+        help="apply filter transmission cut",
+    )
     parser.add_argument(
         "--max-ha-filter-correction",
         type=float,
         default=1.2,
         help="Maximum Halpha filter correction for 'good' Halpha duplicate comparisons",
     )
+
     args = parser.parse_args()
 
-    outdir = Path(args.outdir)
-    ensure_dir(outdir)
+    run_validate_duplicates(
+        table=args.table,
+        outdir=args.outdir,
+        scheme=args.scheme,
+        apply_filter_cut=args.apply_filter_cut,
+        max_ha_filter_correction=args.max_ha_filter_correction,
+    )
 
-    tab = Table.read(args.table)
-    print(f"Read {len(tab)} rows from {args.table}")
 
-    tab = prepare_analysis_table(tab)
-
-    # remove galaxies with CATALOG_USE == CAUTION or TBD
-    # and MASK_WARN, BRIGHT_STAR, and a few others
-    # NOTE: filter warning is not included
-    tab = tab[tab["CLEAN"]]
-    if args.apply_filter_cut:
-        fflag = tab['FILTER_CORRECTION'] < args.max_ha_filter_correction
-        tab = tab[fflag]
-    print(f"length of table after applying CLEAN flag = {len(tab)}")
-    #if "VFID" not in tab.colnames:
-    #    raise RuntimeError("Merged results table must contain VFID for duplicate analysis.")
-
-    if args.scheme == "agc":
-        colid = "OBJID"
-    else:
-        colid = "VFID"
-    multiplicity = count_observation_multiplicity(tab, id_col=colid)
-    pairtab = build_duplicate_pairs(tab, id_col=colid)
-    print(f"Found {len(pairtab)} duplicate pairs")
-
-    write_duplicate_pairs(outdir, pairtab)
-
-    flags = build_row_flags(tab, max_ha_filter_correction=args.max_ha_filter_correction)
-
-    return tab, pairtab, flags
 
 def setup_plots():
     # resolve FWHM columns, including typo fallback
@@ -768,8 +799,8 @@ def setup_plots():
         "GAL_CMAG", "GAL_CRE_ARCSEC", "GAL_CN", "GAL_CBA", "GAL_CPA",
     ]
 
- 
- 
-
+  
 if __name__ == "__main__":
-    tab, pairtab, flags = main()
+    main()
+
+
