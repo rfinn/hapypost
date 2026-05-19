@@ -9,13 +9,16 @@ import matplotlib.ticker as ticker
 mycolors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 def add_spine(ax,color='c'):
     from astropy.table import Table
+    
     spinedir = homedir+'/research/Virgo/tables-north/v2/spines/'
     spine  = Table.read(spinedir+'filament_spine_VirgoIII.fits')
     ax.plot(spine['ra'],spine['dec'],'c--',color=color,transform=ax.get_transform('world'))#, ,label='Filament Spine')
 
 def plot_spines(multicolor=True,colorone=None,color=None,legend=True):
     import glob
-    sfiles = glob.glob(homedir+'/research/Virgo/tables-north/spines/filament*.fits')
+    import os
+    from astropy.table import Table
+    sfiles = glob.glob(os.getenv("HOME")+'/research/Virgo/tables-north/spines/filament*.fits')
     ncolor = 0
     for i,f in enumerate(sfiles):
         spine  = Table.read(f)

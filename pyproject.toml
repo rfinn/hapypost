@@ -16,3 +16,7 @@ dependencies = [
   "matplotlib",
   "astropy",
 ]
+
+[tool.setuptools.packages.find]
+include = ["hapypost*"]
+exclude = ["notebooks*", "scripts*"]
