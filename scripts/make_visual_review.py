@@ -36,67 +36,6 @@ def draw_image_fit(c, imgfile, x, y, w, h):
     c.drawImage(ImageReader(im), x + 0.5 * (w - dw), y + 0.5 * (h - dh), dw, dh)
 from reportlab.lib.pagesizes import letter
 
-# def make_region_pdf(
-#     df,
-#     region,
-#     outfile,
-#     base_dir,
-#     n_per_page=5,
-# ):
-#     page_w, page_h = letter
-#     c = canvas.Canvas(str(outfile), pagesize=letter)
-
-#     sub = df[df["group"] == region].sort_values("TAG").reset_index(drop=True)
-
-#     margin = 24
-#     title_h = 28
-#     row_h = (page_h - 2 * margin - title_h) / n_per_page
-
-#     gap = 10
-#     img_w = (page_w - 2 * margin - gap) / 2
-#     img_h = row_h - 24
-
-#     x_legacy = margin
-#     x_csgr = margin + img_w + gap
-
-#     for start in range(0, len(sub), n_per_page):
-#         page = sub.iloc[start:start + n_per_page]
-#         page_num = start // n_per_page + 1
-
-#         c.setFont("Helvetica-Bold", 16)
-#         c.drawString(margin, page_h - margin, f"Region {region} - page {page_num}")
-
-#         for local_i, (_, row) in enumerate(page.iterrows()):
-#             y_top = page_h - margin - title_h - local_i * row_h
-#             y_img = y_top - row_h + 6
-
-#             tag = clean_string(row["TAG"])
-
-#             c.setFont("Helvetica-Bold", 8)
-#             c.drawString(margin, y_top - 9, tag)
-
-#             cutout_dir = Path(base_dir) / "html" / "cutouts" / tag
-#             legacy_file = get_largest_legacy_jpg(cutout_dir, tag)
-#             csgr_file = cutout_dir / f"{tag}-CS-gr.png"
-
-#             if legacy_file is not None:
-#                 draw_image_fit(c, legacy_file, x_legacy, y_img, img_w, img_h)
-#             else:
-#                 c.setFont("Helvetica", 8)
-#                 c.drawString(x_legacy, y_img + img_h / 2, "Missing legacy image")
-
-#             if csgr_file.exists():
-#                 draw_image_fit(c, csgr_file, x_csgr, y_img, img_w, img_h)
-#             else:
-#                 c.setFont("Helvetica", 8)
-#                 c.drawString(x_csgr, y_img + img_h / 2, "Missing CS-gr image")
-
-#         c.showPage()
-
-#     c.save()
-
-from reportlab.lib.pagesizes import letter
-
 # # two pages, with note
 # def make_region_pdf(
 #     df,
@@ -204,7 +143,7 @@ def make_region_pdf(
         page_num = start // n_per_page + 1
 
         c.setFont("Helvetica-Bold", 15)
-        c.drawString(margin, page_h - margin, f"Region {region} - page {page_num}")
+        c.drawString(margin, page_h - margin, f"Region {region}")
 
         for local_i, (_, row) in enumerate(page.iterrows()):
             col = local_i % ncols
