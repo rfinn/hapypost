@@ -97,32 +97,107 @@ from reportlab.lib.pagesizes import letter
 
 from reportlab.lib.pagesizes import letter
 
+# # two pages, with note
+# def make_region_pdf(
+#     df,
+#     region,
+#     outfile,
+#     base_dir,
+#     n_per_page=5,
+# ):
+#     page_w, page_h = letter
+#     c = canvas.Canvas(str(outfile), pagesize=letter)
+
+#     sub = df[df["group"] == region].sort_values("TAG").reset_index(drop=True)
+
+#     margin = 20
+#     title_h = 24
+#     row_h = (page_h - 2 * margin - title_h) / n_per_page
+
+#     img_gap = 4
+#     notes_gap = 14
+#     notes_w = 150
+
+#     img_w = (page_w - 2 * margin - notes_w - notes_gap - img_gap) / 2
+#     img_h = row_h - 18
+
+#     x_legacy = margin
+#     x_csgr = x_legacy + img_w + img_gap
+#     x_notes = x_csgr + img_w + notes_gap
+
+#     for start in range(0, len(sub), n_per_page):
+#         page = sub.iloc[start:start + n_per_page]
+#         page_num = start // n_per_page + 1
+
+#         c.setFont("Helvetica-Bold", 15)
+#         c.drawString(margin, page_h - margin, f"Region {region} - page {page_num}")
+
+#         for local_i, (_, row) in enumerate(page.iterrows()):
+#             y_top = page_h - margin - title_h - local_i * row_h
+#             y_img = y_top - row_h + 5
+
+#             tag = clean_string(row["TAG"])
+
+#             cutout_dir = Path(base_dir) / "html" / "cutouts" / tag
+#             legacy_file = get_largest_legacy_jpg(cutout_dir, tag)
+#             csgr_file = cutout_dir / f"{tag}-CS-gr.png"
+
+#             if legacy_file is not None:
+#                 draw_image_fit(c, legacy_file, x_legacy, y_img, img_w, img_h)
+#             else:
+#                 c.setFont("Helvetica", 7)
+#                 c.drawString(x_legacy, y_img + img_h / 2, "Missing legacy")
+
+#             if csgr_file.exists():
+#                 draw_image_fit(c, csgr_file, x_csgr, y_img, img_w, img_h)
+#             else:
+#                 c.setFont("Helvetica", 7)
+#                 c.drawString(x_csgr, y_img + img_h / 2, "Missing CS-gr")
+
+#             c.setFont("Helvetica-Bold", 7)
+#             c.drawString(x_notes, y_top - 8, tag)
+
+#             c.setFont("Helvetica", 7)
+#             c.drawString(x_notes, y_top - 22, "Notes:")
+
+#             # light note lines
+#             for j in range(4):
+#                 yline = y_top - 36 - 14 * j
+#                 c.line(x_notes, yline, page_w - margin, yline)
+
+#         c.showPage()
+
+#     c.save()
+
+
+
+
 def make_region_pdf(
     df,
     region,
     outfile,
     base_dir,
-    n_per_page=5,
+    n_per_page=10,
 ):
     page_w, page_h = letter
     c = canvas.Canvas(str(outfile), pagesize=letter)
 
     sub = df[df["group"] == region].sort_values("TAG").reset_index(drop=True)
 
-    margin = 20
+    margin = 18
     title_h = 24
-    row_h = (page_h - 2 * margin - title_h) / n_per_page
 
-    img_gap = 4
-    notes_gap = 14
-    notes_w = 150
+    ncols = 2
+    nrows = 5
+    tile_gap_x = 10
+    tile_gap_y = 8
 
-    img_w = (page_w - 2 * margin - notes_w - notes_gap - img_gap) / 2
-    img_h = row_h - 18
+    tile_w = (page_w - 2 * margin - tile_gap_x) / ncols
+    tile_h = (page_h - 2 * margin - title_h - (nrows - 1) * tile_gap_y) / nrows
 
-    x_legacy = margin
-    x_csgr = x_legacy + img_w + img_gap
-    x_notes = x_csgr + img_w + notes_gap
+    pair_gap = 3
+    img_w = (tile_w - pair_gap) / 2
+    img_h = tile_h - 14
 
     for start in range(0, len(sub), n_per_page):
         page = sub.iloc[start:start + n_per_page]
@@ -132,41 +207,38 @@ def make_region_pdf(
         c.drawString(margin, page_h - margin, f"Region {region} - page {page_num}")
 
         for local_i, (_, row) in enumerate(page.iterrows()):
-            y_top = page_h - margin - title_h - local_i * row_h
-            y_img = y_top - row_h + 5
+            col = local_i % ncols
+            rownum = local_i // ncols
+
+            x0 = margin + col * (tile_w + tile_gap_x)
+            y_top = page_h - margin - title_h - rownum * (tile_h + tile_gap_y)
+            y_img = y_top - tile_h
 
             tag = clean_string(row["TAG"])
+
+            c.setFont("Helvetica-Bold", 6.5)
+            c.drawString(x0, y_top - 7, tag)
 
             cutout_dir = Path(base_dir) / "html" / "cutouts" / tag
             legacy_file = get_largest_legacy_jpg(cutout_dir, tag)
             csgr_file = cutout_dir / f"{tag}-CS-gr.png"
 
             if legacy_file is not None:
-                draw_image_fit(c, legacy_file, x_legacy, y_img, img_w, img_h)
+                draw_image_fit(c, legacy_file, x0, y_img, img_w, img_h)
             else:
-                c.setFont("Helvetica", 7)
-                c.drawString(x_legacy, y_img + img_h / 2, "Missing legacy")
+                c.setFont("Helvetica", 6)
+                c.drawString(x0, y_img + img_h / 2, "Missing legacy")
 
             if csgr_file.exists():
-                draw_image_fit(c, csgr_file, x_csgr, y_img, img_w, img_h)
+                draw_image_fit(c, csgr_file, x0 + img_w + pair_gap, y_img, img_w, img_h)
             else:
-                c.setFont("Helvetica", 7)
-                c.drawString(x_csgr, y_img + img_h / 2, "Missing CS-gr")
-
-            c.setFont("Helvetica-Bold", 7)
-            c.drawString(x_notes, y_top - 8, tag)
-
-            c.setFont("Helvetica", 7)
-            c.drawString(x_notes, y_top - 22, "Notes:")
-
-            # light note lines
-            for j in range(4):
-                yline = y_top - 36 - 14 * j
-                c.line(x_notes, yline, page_w - margin, yline)
+                c.setFont("Helvetica", 6)
+                c.drawString(x0 + img_w + pair_gap, y_img + img_h / 2, "Missing CS-gr")
 
         c.showPage()
 
     c.save()
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("csvfile")
