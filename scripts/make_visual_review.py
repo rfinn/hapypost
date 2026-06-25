@@ -177,7 +177,7 @@ def make_region_pdf(
     region,
     outfile,
     base_dir,
-    n_per_page=10,
+    n_per_page=20,
 ):
     page_w, page_h = letter
     c = canvas.Canvas(str(outfile), pagesize=letter)
