@@ -8,6 +8,17 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageOps, ImageDraw
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
+def make_single_thumbnail(
+    image_file,
+    thumb_h=80,
+    border=3,
+    border_color="black",
+):
+    im = Image.open(image_file).convert("RGB")
+    im = im.resize((int(im.width * thumb_h / im.height), thumb_h))
+    im = ImageOps.expand(im, border=border, fill=border_color)
+    return im
+
 
 def clean_string(x):
     x = str(x)
@@ -137,7 +148,95 @@ def plot_cutouts_in_umap_space(
 
     plt.show()
 
+def plot_cutouts_in_umap_space_single(
+    csvfile,
+    base_dir="/data-pool/Halpha/hapy-output-20260620",
+    outfile="umap_cutouts.png",
+    image_type="legacy",   # "legacy" or "csgr"
+    group_col="umap_region",
+    tag_col="TAG",
+    xcol="UMAP1",
+    ycol="UMAP2",
+    thumb_h=85,
+    zoom=0.65,
+    figsize=(16, 10),
+    dpi=200,
+):
+    df = pd.read_csv(csvfile)
 
+    for col in [tag_col, group_col]:
+        if col in df.columns:
+            df[col] = df[col].apply(clean_string)
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    ax.scatter(
+        df[xcol],
+        df[ycol],
+        s=14,
+        color="0.75",
+        alpha=0.35,
+        zorder=1,
+    )
+
+    base_dir = Path(base_dir)
+
+    for _, row in df.iterrows():
+        tag = clean_string(row[tag_col])
+        x = row[xcol]
+        y = row[ycol]
+
+        cutout_dir = base_dir / "html" / "cutouts" / tag
+
+        if image_type == "legacy":
+            image_file = get_largest_legacy_jpg(cutout_dir, tag)
+        elif image_type == "csgr":
+            image_file = cutout_dir / f"{tag}-CS-gr.png"
+        else:
+            raise ValueError("image_type must be 'legacy' or 'csgr'")
+
+        if image_file is None or not Path(image_file).exists():
+            print(f"Skipping {tag}: missing {image_type}")
+            continue
+
+        thumb = make_single_thumbnail(
+            image_file,
+            thumb_h=thumb_h,
+        )
+
+        imagebox = OffsetImage(thumb, zoom=zoom)
+
+        ab = AnnotationBbox(
+            imagebox,
+            (x, y),
+            frameon=False,
+            pad=0.0,
+            zorder=3,
+        )
+
+        ax.add_artist(ab)
+
+    ax.set_xlabel("UMAP1", fontsize=16)
+    ax.set_ylabel("UMAP2", fontsize=16)
+
+    title = "Legacy cutouts in UMAP space" if image_type == "legacy" else "CS-gr Hα cutouts in UMAP space"
+    ax.set_title(title, fontsize=18)
+
+    dx = 0.08 * (df[xcol].max() - df[xcol].min())
+    dy = 0.08 * (df[ycol].max() - df[ycol].min())
+
+    ax.set_xlim(df[xcol].min() - dx, df[xcol].max() + dx)
+    ax.set_ylim(df[ycol].min() - dy, df[ycol].max() + dy)
+
+    ax.tick_params(labelsize=12)
+
+    fig.tight_layout()
+    fig.savefig(outfile, dpi=dpi, bbox_inches="tight")
+    print(f"Wrote {outfile}")
+
+    plt.close(fig)
+
+    
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("csvfile")
@@ -147,13 +246,29 @@ def main():
     parser.add_argument("--zoom", type=float, default=0.55)
     args = parser.parse_args()
 
-    plot_cutouts_in_umap_space(
-        args.csvfile,
-        base_dir=args.base_dir,
-        outfile=args.outfile,
-        thumb_h=args.thumb_h,
-        zoom=args.zoom,
-    )
+    # plot_cutouts_in_umap_space(
+    #     args.csvfile,
+    #     base_dir=args.base_dir,
+    #     outfile=args.outfile,
+    #     thumb_h=args.thumb_h,
+    #     zoom=args.zoom,
+    # )
+
+    plot_cutouts_in_umap_space_single(
+        "umap_region_spread5_input.csv",
+        image_type="legacy",
+        outfile="umap_legacy_cutouts.png",
+        thumb_h=90,
+        zoom=0.65,
+        )
+
+    plot_cutouts_in_umap_space_single(
+        "umap_region_spread5_input.csv",
+        image_type="csgr",
+        outfile="umap_csgr_cutouts.png",
+        thumb_h=90,
+        zoom=0.65,
+        )
 
 
 if __name__ == "__main__":
