@@ -297,7 +297,7 @@ def main():
     # )
 
     plot_cutouts_in_umap_space_single(
-        "umap_region_spread5_input.csv",
+        args.csvfile,
         image_type="legacy",
         outfile="umap_legacy_cutouts.png",
         thumb_h=90,
@@ -305,7 +305,7 @@ def main():
         )
 
     plot_cutouts_in_umap_space_single(
-        "umap_region_spread5_input.csv",
+        args.csvfile,
         image_type="csgr",
         outfile="umap_csgr_cutouts.png",
         thumb_h=90,
