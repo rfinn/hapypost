@@ -160,7 +160,8 @@ class VTables:
         #self.halpha = Table.read(self.tabledir+self.tableprefix+'hapy_v20260514_20260517.fits')
         #self.halpha = Table.read(self.tabledir+self.tableprefix+'hapy_v20260615_20260616.fits')
         #self.halpha = Table.read(self.tabledir+self.tableprefix+'hapy_v20260615_20260618.fits')
-        self.halpha = Table.read(self.tabledir+self.tableprefix+'hapy_v20260622_20260622.fits')        
+        #self.halpha = Table.read(self.tabledir+self.tableprefix+'hapy_v20260622_20260622.fits')
+        self.halpha = Table.read(self.tabledir+self.tableprefix+'hapy_v20260624_20260624.fits')                
 
     def read_tempel(self):
         ''' read in Tempel table; store as self.tempel  '''

@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from hapypost.plotting.environment import plot_spines, mycolors
-from hapypost.plotting.common import get_dsfr, get_sfr_ms, plot_ms, get_mstar, get_sfr, fix_homedir, get_dwarf_flag, get_halpha_detection_flag
+#from hapypost.plotting.common import get_dsfr, get_sfr_ms, plot_ms, get_mstar, get_sfr, fix_homedir, get_dwarf_flag, get_halpha_detection_flag
+from hapypost.plotting.common import *
 from hapypost.io.vfs_tables import VTables
 import os
 import argparse
