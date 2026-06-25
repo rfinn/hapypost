@@ -8,16 +8,52 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageOps, ImageDraw
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
+import matplotlib.pyplot as plt
+
+
+import matplotlib.pyplot as plt
+from PIL import Image, ImageOps
+
+# use the default matplotlib color cycle
+colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+REGION_COLORS = {
+    "A": colors[0],
+    "B": colors[1],
+    "C": colors[2],
+    "D": colors[3],
+    "E": colors[4],
+    "F": colors[5],
+    "G": colors[6],
+    "H": colors[7],
+    "I": colors[8],
+}
+
+
 def make_single_thumbnail(
     image_file,
+    region,
     thumb_h=80,
-    border=3,
-    border_color="black",
+    border=2,
 ):
+    """
+    Create a thumbnail with a colored border corresponding
+    to the UMAP region.
+    """
+
     im = Image.open(image_file).convert("RGB")
     im = im.resize((int(im.width * thumb_h / im.height), thumb_h))
-    im = ImageOps.expand(im, border=border, fill=border_color)
+
+    border_color = REGION_COLORS.get(region, "black")
+
+    im = ImageOps.expand(
+        im,
+        border=border,
+        fill=border_color,
+    )
+
     return im
+
 
 
 def clean_string(x):
@@ -198,11 +234,17 @@ def plot_cutouts_in_umap_space_single(
         if image_file is None or not Path(image_file).exists():
             print(f"Skipping {tag}: missing {image_type}")
             continue
+        region = row["umap_region"]
 
         thumb = make_single_thumbnail(
             image_file,
+            region=region,
             thumb_h=thumb_h,
-        )
+            )
+        # thumb = make_single_thumbnail(
+        #     image_file,
+        #     thumb_h=thumb_h,
+        # )
 
         imagebox = OffsetImage(thumb, zoom=zoom)
 
